@@ -1,0 +1,48 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; A string of words S is given. Compute string D containing only low bytes multiple of 5 from string S.
+    14                                      ; If S = 1223h, 5628h => D = 23h, 28h
+    15 00000000 231228562956                s dw 1223h, 5628h, 5629h
+    16                                      ls equ ($-s)/2
+    17 00000006 <res 00000003>              d resb ls 
+    18 00000009 05                          cinci db 5
+    19                                  
+    20                                  ; our code starts here
+    21                                  segment code use32 class=code
+    22                                      start:
+    23                                          ; ...
+    24 00000000 BE00000000                      mov esi, 0; s
+    25 00000005 BF00000000                      mov edi, 0; d
+    26 0000000A B903000000                      mov ecx, ls
+    27                                          repeta:
+    28 0000000F 668B86[00000000]                    mov ax,[s+esi]
+    29 00000016 B400                                mov ah, 0
+    30 00000018 F63D[09000000]                      idiv byte[cinci]
+    31 0000001E 80FC00                              cmp ah, 0; daca e div
+    32 00000021 7402                                JE adauga
+    33 00000023 7514                                JNE next
+    34                                                  adauga:
+    35 00000025 8A86[00000000]                               mov al,[s+esi]
+    36 0000002B 8887[06000000]                               mov [d+edi], al
+    37 00000031 83C701                                       add edi, 1
+    38 00000034 83C602                                       add esi, 2
+    39                                                       
+    40 00000037 EB03                                         jmp myendif
+    41                                                       
+    42                                                  next:
+    43 00000039 83C602                                      add esi, 2
+    44                                                  myendif:
+    45 0000003C E2D1                            loop repeta
+    46                                                
+    47 0000003E 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    48 00000040 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

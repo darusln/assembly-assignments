@@ -1,0 +1,49 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; [100*(d+3)-10]/d
+    14                                      ;a,b,c - byte, d - word
+    15 00000000 0500                        d dw 5
+    16                                  
+    17                                  ; our code starts here
+    18                                  segment code use32 class=code
+    19                                      start:
+    20                                          ; [100*(d+3)-10]/d
+    21 00000000 66BB0300                        mov bx, 3 ;bx = 3
+    22 00000004 66031D[00000000]                add bx, [d] ;bx = d + 3 = 5 + 3 = 8
+    23                                          
+    24                                          ;100*(d+3)
+    25 0000000B 66B86400                        mov ax, 100 ;ax = 100
+    26 0000000F 66F7E3                          mul bx ;dx:ax = ax * bx = 100 * 8 = 800
+    27                                          
+    28                                          ;folosim stiva si mutam din dx:ax in eax
+    29 00000012 6652                            push dx
+    30 00000014 6650                            push ax
+    31 00000016 58                              pop eax
+    32                                          
+    33                                          ;100*(d+3)-10
+    34 00000017 83E80A                          sub eax,10 ;eax = 800 - 10 = 790
+    35                                          
+    36                                          ;folosim stiva din nou si mutam val din eax in dx:ax pt impartire
+    37 0000001A 50                              push eax
+    38 0000001B 6658                            pop ax
+    39 0000001D 665A                            pop dx
+    40                                          
+    41                                          ;[100*(d+3)-10]/d
+    42 0000001F 66F735[00000000]                div word[d] ;dx:ax/d = 790/5 = 158, in ax este catul adica 158 si in dx restul care e 0
+    43                                          
+    44                                          
+    45                                          
+    46                                      
+    47                                          ; exit(0)
+    48 00000026 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    49 00000028 FF15[00000000]                  call    [exit]       ; call exit to terminate the program
